@@ -14,7 +14,12 @@ pub mod pallet {
     // 系统模块，数据和类型信息
     use frame_system::pallet_prelude::*;
     use sp_std::vec::Vec;
-    use frame_support::sp_runtime::traits::StaticLookup;
+    // use frame_support::sp_runtime::traits::StaticLookup;
+    use sp_runtime::{
+        traits::{
+            StaticLookup
+        }
+    };
 
     // 定义模块配置接口，继承自系统模块的Config接口
     #[pallet::config]
@@ -61,6 +66,7 @@ pub mod pallet {
 
         ClaimCreated(T::AccountId, Vec<u8>),
         ClaimRevoked(T::AccountId, Vec<u8>),
+        ClaimTransfered(T::AccountId, T::AccountId, Vec<u8>),
     }
 
     // 定义Error枚举
@@ -156,28 +162,24 @@ pub mod pallet {
             // 校验发送方
             // https://substrate.dev/docs/en/knowledgebase/runtime/origin
             let sender = ensure_signed(origin)?;
-
+            let dest = T::Lookup::lookup(dest)?;
             let (owner,_)=Proofs::<T>::get(&claim).ok_or(Error::<T>::ClaimNotExist)?;
             ensure!(sender == owner,Error::<T>::NotClaimOwner);
 
-            let dest: <T>::AccountId = T::Lookup::lookup(dest)?;
+            // let dest = T::Lookup::lookup(dest)?;
             Proofs::<T>::insert(
                 &claim,
-                (dest.clone(), frame_system::Pallet::<T>::block_number()),
+                (sender.clone(), frame_system::Pallet::<T>::block_number()),
             );
 
             // // Update storage.
             // <Something<T>>::put(something);
 
             // Emit an event.
-            Self::deposit_event(Event::ClaimTransfered(sender,dest, claim));
+            Self::deposit_event(Event::ClaimTransfered(sender, desc, claim));
             // Return a successful DispatchResultWithPostInfo
             Ok(().into())
         }
-
-
-
-
     }
 
 }
