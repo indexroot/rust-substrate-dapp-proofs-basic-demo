@@ -166,17 +166,19 @@ pub mod pallet {
             let (owner,_)=Proofs::<T>::get(&claim).ok_or(Error::<T>::ClaimNotExist)?;
             ensure!(sender == owner,Error::<T>::NotClaimOwner);
 
+            Proofs::<T>::remove(&claim);
+
             // let dest = T::Lookup::lookup(dest)?;
             Proofs::<T>::insert(
                 &claim,
-                (sender.clone(), frame_system::Pallet::<T>::block_number()),
+                (dest.clone(), frame_system::Pallet::<T>::block_number()),
             );
 
             // // Update storage.
             // <Something<T>>::put(something);
 
             // Emit an event.
-            Self::deposit_event(Event::ClaimTransfered(sender, desc, claim));
+            Self::deposit_event(Event::ClaimTransfered(sender, dest, claim));
             // Return a successful DispatchResultWithPostInfo
             Ok(().into())
         }
