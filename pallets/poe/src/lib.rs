@@ -99,7 +99,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T:Config> Pallet<T> {
 
-        // 创建存证
+        /// 创建存证
         #[pallet::weight(0)]
         pub fn create_claim(
             origin: OriginFor<T>,
@@ -151,7 +151,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        // 转移存证
+        /// 转移存证
         #[pallet::weight(0)]
         pub fn transfer_claim(
             origin: OriginFor<T>,
@@ -174,8 +174,6 @@ pub mod pallet {
                 (dest.clone(), frame_system::Pallet::<T>::block_number()),
             );
 
-            // // Update storage.
-            // <Something<T>>::put(something);
 
             // Emit an event.
             Self::deposit_event(Event::ClaimTransfered(sender, dest, claim));
