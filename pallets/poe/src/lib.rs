@@ -72,24 +72,15 @@ pub mod pallet {
     // 定义Error枚举
     #[pallet::error]
     pub enum Error<T> {
-        // /// Error names should be descriptive.
-        // NoneValue,
-        // /// Errors should have helpful documentation associated with them.
-        // StorageOverflow,
         /// 已存在
         ProofAlreadyExist,
+        /// 存证不存在
         ClaimNotExist,
+        /// 不是存证的拥有者
         NotClaimOwner,
     }
 
-    // // FRAME v2.
-    // #[pallet::error]
-    // pub enum Error<T> {
-    //     /// Error names should be descriptive.
-    //     InvalidParameter,
-    //     /// Errors should have helpful documentation associated with them.
-    //     OutOfSpace,
-    // }
+
 
     // 定义hooks空实现
     #[pallet::hooks]
@@ -180,6 +171,41 @@ pub mod pallet {
             // Return a successful DispatchResultWithPostInfo
             Ok(().into())
         }
+
+        /// 转移存证mutate版
+        #[pallet::weight(0)]
+        pub fn transfer_mutate_claim(
+            origin: OriginFor<T>,
+            claim: Vec<u8>,
+            dest: <T::Lookup as StaticLookup>::Source,
+        ) -> DispatchResultWithPostInfo {
+
+            // 校验发送方
+            // https://substrate.dev/docs/en/knowledgebase/runtime/origin
+            let sender = ensure_signed(origin)?;
+            let dest = T::Lookup::lookup(dest)?;
+            let (owner,_)=Proofs::<T>::get(&claim).ok_or(Error::<T>::ClaimNotExist)?;
+            ensure!(sender == owner,Error::<T>::NotClaimOwner);
+
+            // Proofs::<T>::remove(&claim);
+            //
+            //
+            // Proofs::<T>::insert(
+            //     &claim,
+            //     (dest.clone(), frame_system::Pallet::<T>::block_number()),
+            // );
+
+            Proofs::<T>::mutate(&claim,|value| {
+                *value=Some((dest.clone(), frame_system::Pallet::<T>::block_number()));
+            });
+
+            // Emit an event.
+            Self::deposit_event(Event::ClaimTransfered(sender, dest, claim));
+            // Return a successful DispatchResultWithPostInfo
+            Ok(().into())
+        }
+
+
     }
 
 }
