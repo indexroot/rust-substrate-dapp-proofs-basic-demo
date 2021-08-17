@@ -34,7 +34,7 @@ fn create_claim_failed_when_claim_already_exist() {
 }
 
 
-//作业第二题
+//作业2，存证长度限制测试
 #[test]
 fn create_claim_failed_when_claim_too_large() {
     new_test_ext().execute_with(|| {
@@ -56,7 +56,7 @@ fn revoke_claim_works() {
         let claim = vec![0,1];
         let _ = PoeModule::create_claim(Origin::signed(1), claim.clone());
 
-        //作业非拥有人revoke，错误 NotClaimOwner
+        //作业1 非拥有人revoke，错误 NotClaimOwner
         assert_noop!(
             PoeModule::revoke_claim(Origin::signed(2), claim.clone()),
             Error::<Test>::NotClaimOwner

@@ -265,6 +265,7 @@ impl pallet_template::Config for Runtime {
 }
 
 parameter_types! {
+	///存证长度限制
 	pub const ClaimLimit:u32 =256;
 }
 
@@ -272,6 +273,7 @@ parameter_types! {
 /// Configure the template poe in pallets/poe.
 impl pallet_poe::Config for Runtime {
 	type Event = Event;
+	// 存证长度限制
 	type ClaimLimit = ClaimLimit;
 }
 

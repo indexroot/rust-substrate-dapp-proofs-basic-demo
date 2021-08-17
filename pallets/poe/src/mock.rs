@@ -53,11 +53,13 @@ impl system::Config for Test {
 }
 
 parameter_types! {
+	//作业2：存证长度限制
 	pub const ClaimLimit:u32 =256;
 }
 
 impl pallet_poe::Config for Test {
 	type Event = Event;
+	//作业2：存证长度限制
 	type ClaimLimit = ClaimLimit;
 	// type ChaimLengthLimit = ChaimLengthLimit;
 }

@@ -32,7 +32,7 @@ pub mod pallet {
     // 定义模块配置接口，继承自系统模块的Config接口
     #[pallet::config]
     pub trait Config: frame_system::Config {
-
+        //作业2：存证长度限制
         #[pallet::constant]
 		type ClaimLimit: Get<u32>;
 
@@ -101,7 +101,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
 
-        /// 创建存证
+        /// 创建存证，长度限制
         #[pallet::weight(0)]
         pub fn create_claim(
             origin: OriginFor<T>,
@@ -111,11 +111,12 @@ pub mod pallet {
             // 校验发送方
             // https://substrate.dev/docs/en/knowledgebase/runtime/origin
             let sender = ensure_signed(origin)?;
-
+            // 存证长度限制
             let claim_limit = T::ClaimLimit::get() as usize;
-            // let claim_limit:usize=claim_limit.into(); 
+            // 确保小于ClaimLimit，否则提示错误
             ensure!(claim.len() < claim_limit, Error::<T>::ClaimToolarge);
 
+            // 确保存正唯一
             ensure!(!Proofs::<T>::contains_key(&claim),Error::<T>::ProofAlreadyExist);
 
             Proofs::<T>::insert(
