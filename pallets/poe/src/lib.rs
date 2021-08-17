@@ -3,6 +3,14 @@
 
 pub use pallet::*;
 
+//引入测试模块
+//编译标签，测试的时候才编译
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
 ///存证模块
 #[frame_support::pallet]
 pub mod pallet {
@@ -24,6 +32,9 @@ pub mod pallet {
     // 定义模块配置接口，继承自系统模块的Config接口
     #[pallet::config]
     pub trait Config: frame_system::Config {
+
+        #[pallet::constant]
+		type ClaimLimit: Get<u32>;
 
         // /// Because this pallet emits events, it depends on the runtime's definition of an event.
         // 关联类型
@@ -78,9 +89,9 @@ pub mod pallet {
         ClaimNotExist,
         /// 不是存证的拥有者
         NotClaimOwner,
+        /// 存证长度不可以超过256字节
+        ClaimToolarge
     }
-
-
 
     // 定义hooks空实现
     #[pallet::hooks]
@@ -88,7 +99,7 @@ pub mod pallet {
 
     // 定义可调用函数
     #[pallet::call]
-    impl<T:Config> Pallet<T> {
+    impl<T: Config> Pallet<T> {
 
         /// 创建存证
         #[pallet::weight(0)]
@@ -100,6 +111,10 @@ pub mod pallet {
             // 校验发送方
             // https://substrate.dev/docs/en/knowledgebase/runtime/origin
             let sender = ensure_signed(origin)?;
+
+            let claim_limit = T::ClaimLimit::get() as usize;
+            // let claim_limit:usize=claim_limit.into(); 
+            ensure!(claim.len() < claim_limit, Error::<T>::ClaimToolarge);
 
             ensure!(!Proofs::<T>::contains_key(&claim),Error::<T>::ProofAlreadyExist);
 
@@ -142,69 +157,37 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// 转移存证
+
+        /// 转移存证，用AccountId
         #[pallet::weight(0)]
-        pub fn transfer_claim(
+        pub fn transfer_accountid_claim(
             origin: OriginFor<T>,
             claim: Vec<u8>,
-            dest: <T::Lookup as StaticLookup>::Source,
+            dest: T::AccountId,
         ) -> DispatchResultWithPostInfo {
 
             // 校验发送方
             // https://substrate.dev/docs/en/knowledgebase/runtime/origin
             let sender = ensure_signed(origin)?;
-            let dest = T::Lookup::lookup(dest)?;
+            // let dest = T::Lookup::lookup(dest)?;
             let (owner,_)=Proofs::<T>::get(&claim).ok_or(Error::<T>::ClaimNotExist)?;
             ensure!(sender == owner,Error::<T>::NotClaimOwner);
 
-            Proofs::<T>::remove(&claim);
 
-            // let dest = T::Lookup::lookup(dest)?;
             Proofs::<T>::insert(
                 &claim,
                 (dest.clone(), frame_system::Pallet::<T>::block_number()),
             );
 
+            // Proofs::<T>::mutate(&claim,|value| {
+            //     *value=Some((dest.clone(), frame_system::Pallet::<T>::block_number()));
+            // });
 
             // Emit an event.
             Self::deposit_event(Event::ClaimTransfered(sender, dest, claim));
             // Return a successful DispatchResultWithPostInfo
             Ok(().into())
         }
-
-        /// 转移存证mutate版
-        #[pallet::weight(0)]
-        pub fn transfer_mutate_claim(
-            origin: OriginFor<T>,
-            claim: Vec<u8>,
-            dest: <T::Lookup as StaticLookup>::Source,
-        ) -> DispatchResultWithPostInfo {
-
-            // 校验发送方
-            // https://substrate.dev/docs/en/knowledgebase/runtime/origin
-            let sender = ensure_signed(origin)?;
-            let dest = T::Lookup::lookup(dest)?;
-            let (owner,_)=Proofs::<T>::get(&claim).ok_or(Error::<T>::ClaimNotExist)?;
-            ensure!(sender == owner,Error::<T>::NotClaimOwner);
-
-            // Proofs::<T>::remove(&claim);
-            //
-            //
-            // Proofs::<T>::insert(
-            //     &claim,
-            //     (dest.clone(), frame_system::Pallet::<T>::block_number()),
-            // );
-
-            Proofs::<T>::mutate(&claim,|value| {
-                *value=Some((dest.clone(), frame_system::Pallet::<T>::block_number()));
-            });
-
-            // Emit an event.
-            Self::deposit_event(Event::ClaimTransfered(sender, dest, claim));
-            // Return a successful DispatchResultWithPostInfo
-            Ok(().into())
-        }
-
 
     }
 
